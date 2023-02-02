@@ -5,14 +5,22 @@ metadata:
 spec:
   template:
     spec:
+      serviceAccountName: mallocsnoop-sa
+      tolerations:
+        # these tolerations are to have the daemonset runnable on control plane nodes
+        # remove them if your control plane nodes should not run pods
+        - key: node-role.kubernetes.io/control-plane
+          operator: Exists
+          effect: NoSchedule
+        - key: node-role.kubernetes.io/master
+          operator: Exists
+          effect: NoSchedule
       containers:
-        - image: quay.io/dave-tucker/mallocsnoop:latest
+        - image: quay.io/dave_tucker/mallocsnoop:latest
           imagePullPolicy: IfNotPresent
           name: mallocsnoop
           securityContext:
             privileged: true
-            capabilities:
-              add: ["BPF"]
           ports:
             - name: web
               containerPort: 8080
