@@ -160,34 +160,30 @@ static void sig_handler(int sig)
 static int handle_event(void *ctx, void *data, size_t data_sz)
 {
 	const struct event *e = data;
-	struct tm *tm;
-	char ts[32];
-	time_t t;
+	int ts;
 
-	time(&t);
-	tm = localtime(&t);
-	strftime(ts, sizeof(ts), "%H:%M:%S", tm);
+	ts = (int)time(NULL);
 
 	switch (e->event) {
 	case EV_FREE:
-		printf("%-8s %-6s(%p) %5ld bytes %-16s %-7d", ts, "FREE", e->addr, e->size, e->comm, e->pid);
+		printf("{\"timestamp\": %d, \"event\": \"%s\", \"address\": \"%p\", \"size\": %ld, \"comm\": \"%s\", \"pid\": %d", (int)time(NULL), "FREE", e->addr, e->size, e->comm, e->pid);
 
 		if (e->duration_ns)
-			printf(" (%llums)", e->duration_ns / 1000000);
+			printf(", \"duration\": %llu", e->duration_ns / 1000000);
 
-		printf("\n");
+		printf("}\n");
 		break;
 	case EV_MALLOC:
-		printf("%-8s %-6s(%zd)=%p %-16s %-7d\n", ts, "MALLOC", e->size, e->addr, e->comm, e->pid);
+		printf("{\"timestamp\": %d, \"event\": \"%s\", \"address\": \"%p\", \"size\": %ld, \"comm\": \"%s\", \"pid\": %d}\n", ts, "MALLOC", e->addr, e->size, e->comm, e->pid);
 		break;
 	case EV_CALLOC:
-		printf("%-8s %-6s(%zd, %zd)=%p %-16s %-7d\n", ts, "CALLOC", e->nmemb, e->size, e->addr, e->comm, e->pid);
+		printf("{\"timestamp\": %d, \"event\": \"%s\", \"address\": \"%p\", \"size\": %ld, \"comm\": \"%s\", \"pid\": %d}\n", ts, "CALLOC", e->addr, e->size, e->comm, e->pid);
 		break;
 	case EV_REALLOC:
-		printf("%-8s %-6s(%p, %zd)=%p %-16s %-7d\n", ts, "REALLOC", e->realloc_addr, e->size, e->addr, e->comm, e->pid);
+		printf("{\"timestamp\": %d, \"event\": \"%s\", \"address\": \"%p\", \"size\": %ld, \"comm\": \"%s\", \"pid\": %d}\n", ts, "REALLOC", e->addr, e->size, e->comm, e->pid);
 		break;
 	default:
-		printf("%-8s INVALID event %d\n", ts, e->event);
+		printf("{\"timestamp\": %d, \"error\": \"invalid event %d\"}\n", ts, e->event);
 	}
 
 	return 0;
@@ -249,8 +245,6 @@ int main(int argc, char **argv)
 		goto cleanup;
 	}
 
-	/* Process events */
-	printf("%-8s %-5s %-16s %-7s\n", "TIME", "EVENT(ADDR)", "COMM", "PID");
 	while (!exiting) {
 		err = ring_buffer__poll(rb, 100 /* timeout, ms */);
 		/* Ctrl-C will cause -EINTR */

@@ -1,0 +1,18 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: mallocsnoop
+spec:
+  template:
+    spec:
+      containers:
+        - image: quay.io/dave-tucker/mallocsnoop:latest
+          imagePullPolicy: IfNotPresent
+          name: mallocsnoop
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["BPF"]
+          ports:
+            - name: web
+              containerPort: 8080
